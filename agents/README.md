@@ -74,8 +74,9 @@ Agent outputs are constrained by JSON Schema in API mode and validated against t
 ## Running a case (Windows PowerShell, from the repo folder, with the venv active)
 
 ```powershell
-# 1. start a run (paste mode is the default; it writes the prompts and a PASTE_PLAN.md, then pauses)
-python -m engine.orchestrator run --case cases\T1_coherent_misfit --analyst "Your Name"
+# 1. start a run from the command line (or ask Claude in the desktop app: "Use orgfit to start a run of T1")
+#    --mode paste writes the prompts and a PASTE_PLAN.md for claude.ai, then pauses
+python -m engine.orchestrator run --case cases\T1_coherent_misfit --mode paste --analyst "Your Name"
 
 # 2. CP1: open runs\T1_coherent_misfit\<run_id>\cp1_review.csv in Excel.
 #    Set analyst_decision per row: accepted / rejected / edited (edited: fill analyst_level or analyst_class).
@@ -93,7 +94,10 @@ python -m engine.orchestrator status --run runs\T1_coherent_misfit\<run_id>
 **Live stress demo (b), injecting a contradiction:** add the new file and its register row, then `run` again. Only the prompt holding the new source needs a claude.ai round. Keep a saved reply as backup.
 **Replay mode** (`--mode replay`) never calls the API. With a warm cache, it reproduces a previous run exactly.
 
-## Paste mode: the default (no API credit, D-29, D-30)
+## Desktop mode: the default (D-31)
+The Claude desktop app fetches and answers the tasks itself through the local connector. Setup and usage: `docs/claude_desktop_setup.md`. In desktop mode the files below are written in the same way; the connector serves them to Claude and writes the replies.
+
+## Paste mode: the fallback (no API credit, D-29, D-30)
 1. `run` (or `resume`) writes **all** prompts of the current stage to `runs\<case>\<run_id>\paste\`, plus `PASTE_PLAN.md`, which assigns them to M1–M7.
 2. For each prompt: open a **new** claude.ai chat, attach the `.prompt.md` file (or paste its text), and send.
 3. Save Claude's reply as the `.reply.json` name given in the plan, in the same folder. Code fences around the JSON are fine.

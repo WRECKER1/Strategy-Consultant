@@ -15,7 +15,7 @@ This is an agentic diagnostic tool. It asks whether an organization's structure,
 |---|---|---|
 | 0 | Spec digest, change proposals, build choice | done: `docs/phase0_spec_digest.md` |
 | 1 | Config files (codebook, evidence rules, modifiers, rules, options, source checklist) | done |
-| 2 | Agent prompts, schemas, LLM gateway (api / paste / replay), verifier, intake, orchestrator, checkpoints CP1–CP3, run log | **done, awaiting review**: see `agents/README.md` |
+| 2 | Agent prompts, schemas, LLM gateway, Claude desktop connector, verifier, intake, orchestrator, checkpoints CP1–CP3, run log | done: see `agents/README.md`, `docs/claude_desktop_setup.md` |
 | 3 | Scoring/diagnosis engine, report, Show Evidence, cross-case dashboard | not started (`engine/expr.py` exists) |
 | 4 | Test harness: T1–T5, reliability, sensitivity, AI vs manual | not started |
 | 5 | Demo package | not started |
@@ -34,7 +34,8 @@ config/        THE THEORY. Edit these files, never the code, to change rules.
   options.yaml           options library A–G (MT §6.3)
   source_checklist.yaml  source-pack checklist (MT §2)
   register_schema.yaml   evidence register and run-log fields (App. B)
-agents/        LLM agent prompts, output schemas, gateway (api / paste / replay)
+agents/        LLM agent prompts, output schemas, gateway (desktop / paste / replay / api)
+mcp_server/    local connector for the Claude desktop app + installer
 engine/        deterministic code: intake, verifier, orchestrator, checkpoints (no AI inside)
 cases/         one folder per case; T1 synthetic pack included
 tests/         automated tests (python -m pytest)
@@ -59,8 +60,8 @@ docs/          spec digest, decision log, later the demo script and AI Use Log
 
 To run a case from the command line, see `agents/README.md`. The Streamlit app (`streamlit run app/app.py`) arrives in Phase 3.
 
-### AI steps: paste mode (default)
-The tool needs no API key. It writes prompts that you run in claude.ai with your Pro accounts; see `agents/README.md`.
+### AI steps: Claude desktop app (default)
+The tool needs no API key. The Claude desktop app, on your Pro login, runs the agent tasks through a local connector. Setup takes about 10 minutes: see **`docs/claude_desktop_setup.md`**. Fallback: paste mode in claude.ai (`--mode paste`, see `agents/README.md`).
 
 API mode exists but has not been tested against the live API. If you ever get a key, set it in PowerShell:
 ```powershell

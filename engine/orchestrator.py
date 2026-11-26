@@ -325,11 +325,11 @@ def new_run(case_dir: Path, mode: str | None, exclude: list[str]) -> Run:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m engine.orchestrator")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    a = sub.add_parser("run"); a.add_argument("--case", required=True); a.add_argument("--mode", choices=["api", "paste", "replay"])
+    a = sub.add_parser("run"); a.add_argument("--case", required=True); a.add_argument("--mode", choices=["api", "paste", "desktop", "replay"])
     a.add_argument("--exclude", default="", help="comma-separated source IDs to leave out (live stress demo)")
     a.add_argument("--analyst", default=None)
     b = sub.add_parser("resume"); b.add_argument("--run", required=True); b.add_argument("--analyst", default=None)
-    b.add_argument("--mode", choices=["api", "paste", "replay"])
+    b.add_argument("--mode", choices=["api", "paste", "desktop", "replay"])
     c = sub.add_parser("accept-verified"); c.add_argument("--run", required=True); c.add_argument("--analyst", required=True)
     d = sub.add_parser("status"); d.add_argument("--run", required=True)
     args = ap.parse_args(argv)

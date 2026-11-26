@@ -2,8 +2,10 @@
 
 Modes (config/runtime.yaml → agent_mode):
   api    – Claude API call with a JSON-schema output format; response cached
-  paste  – prompt written to a file for manual use in Claude Pro; the run
+  paste  – prompt written to a file for manual use in claude.ai; the run
            pauses until the reply file exists (free)
+  desktop – like paste, but the Claude desktop app fetches tasks and submits
+           replies itself through the local MCP connector (mcp_server/)
   replay – cached responses only; never calls the API (demo safety net)
 
 In every mode the reply is validated against the schema before use, and the
@@ -73,9 +75,9 @@ class Gateway:
         if self.mode == "replay":
             raise ReplayMiss(f"No cached response for {agent} call {call_id} (key {key}). "
                              f"Run once in api or paste mode first.")
-        if self.mode == "paste":
+        if self.mode in ("paste", "desktop"):
             data = self._paste(agent, call_id, key, system, user, schema)
-            origin, usage = "paste", {}
+            origin, usage = self.mode, {}
         elif self.mode == "api":
             data, usage = self._api(agent, system, user, schema)
             origin = "api"
@@ -83,7 +85,9 @@ class Gateway:
             raise ValueError(f"Unknown agent_mode {self.mode}")
 
         self._validate(agent, data, schema)
-        write_json(cache, {"agent": agent, "model": model if origin == "api" else f"{model} (paste mode, manual)",
+        label = {"api": model, "paste": "Claude via claude.ai (paste mode, manual)",
+                 "desktop": "Claude via Claude desktop app (local MCP connector)"}[origin]
+        write_json(cache, {"agent": agent, "model": label,
                            "origin": origin, "call_id": call_id, "output": data})
         write_json(self.run_dir / "agent_io" / agent / f"{call_id}.json",
                    {"system_sha": sha(system)[:16], "user": user, "output": data, "usage": usage})
@@ -155,6 +159,8 @@ class Gateway:
                     "off, ask Claude in the same chat: 'Continue the JSON exactly where you stopped', join the parts, "
                     "and save again.") from exc
         folder.mkdir(parents=True, exist_ok=True)
+        write_json(folder / f"{call_id}.task.json", {"agent": agent, "call_id": call_id, "cache_key": key,
+                                                     "system": system, "user": user, "schema": schema})
         prompt_path.write_text(
             "# PASTE-MODE PROMPT — attach this file to a NEW claude.ai chat (or paste everything below the line)\n"
             f"# Agent: {agent} | Call: {call_id} | Cache key: {key}\n"

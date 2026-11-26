@@ -39,6 +39,7 @@ All design decisions made since the midterm. You asked me to "go with your intui
 | D-28 | Page pre-filter: documents over 30 pages keep only their first 12 pages plus pages that match keywords (structure, technology, culture, learning, ambition). Every skipped page is logged, and the report lists the filter as a limitation. The AI-vs-manual test checks it for misses. It is part of the core config and fingerprint. | MT §2 stage 3 (effort) | `config/prefilter.yaml`, `engine/sources.py` |
 | D-29 | Paste mode is built for claude.ai. Prompts hold about 12,000 words of source text, and documents are mixed in one prompt with a `source_id` on every row. Classification batches hold 150 rows. **All prompts of a stage are written at once**, with a `PASTE_PLAN.md` that splits them across M1–M7 so they can be done in parallel. | No API credit (26 Nov) | `config/runtime.yaml`, `engine/orchestrator.py` |
 | D-30 | No API credit will be bought (26 Nov). Paste mode is the default. API mode stays in the code, but it has not been run against the live API and must not be presented as tested. | User decision | `config/runtime.yaml` |
+| D-31 | **Claude desktop app as the agent runtime.** A local MCP connector (`mcp_server/server.py`) serves agent tasks to the Claude desktop app on a member's Pro login and receives its results. Each result is checked against the schema, its quotes are previewed, and it cannot be overwritten. The run resumes automatically. The connector has **no checkpoint tools**, so CP1–CP3 stay human. Paste mode is the fallback, replay mode the demo backup. Desktop tasks hold about 6,000 words, so one chat can handle several. | User choice, 26 Nov (Option 1); MT Table 11 | `mcp_server/`, `config/runtime.yaml`, `docs/claude_desktop_setup.md` |
 
 ## Assumptions
 
@@ -49,6 +50,7 @@ All design decisions made since the midterm. You asked me to "go with your intui
 | A-03 | Maximum excerpt length is 60 words (R7 says "short"). | Copyright discipline | `evidence_rules.yaml` |
 | A-04 | Quote verification accepts a near-exact match at ≥ 0.92 normalized similarity. Anything below is rejected and logged. | PDF text extraction alters hyphens, quotes and line breaks | `evidence_rules.yaml` `verification` |
 | A-05 | Demo laptop runs Windows 11 with Python 3.12 from python.org. | Your 26 Nov message | README |
+| A-07 | The Claude desktop app on Windows allows local MCP connectors for the members' Pro accounts. **Not yet verified on a real laptop.** If an institute-managed account blocks it, paste mode is used. | Option 1 depends on it | `docs/claude_desktop_setup.md` §4 |
 | A-06 | The GitHub repo `WRECKER1/Strategy-Consultant` is **public**. The midterm text, course case texts and copyrighted source documents are therefore **not committed**; real-firm source files stay local (`cases/*/sources/` is git-ignored except for SYNTHETIC packs). Consider making the repo private until grading is done. | Copyright and academic integrity | `.gitignore` |
 
 ## Running without API credit (D-30)
@@ -74,5 +76,6 @@ Split across 7 members, that is about 3 prompts each per real firm. Claude Pro u
 
 ## Change history
 - 2026-11-26: D-01 to D-22 and A-01 to A-06 recorded. Phase 1 config v1.0.0.
+- 2026-11-26: Option 1 chosen. D-31 and A-07 added; desktop mode is the default; connector and setup guide added.
 - 2026-11-26: No API credit. D-28 to D-30 added; paste mode made the default; `config/prefilter.yaml` added (new fingerprint).
 - 2026-11-26: Phase 2. D-23 to D-27 added, three defects fixed, `config/runtime.yaml` added (outside the fingerprint).

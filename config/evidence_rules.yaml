@@ -1,0 +1,97 @@
+# =============================================================================
+# EVIDENCE PROTOCOL — Layer 1 (MT §5.1 Table 6, §5.2 rules R1–R7, §5.3)
+# Read by the verifier (engine/verify.py) and the scoring engine (engine/scoring.py).
+# =============================================================================
+
+version: "1.0.0"
+source: "Midterm report, Section 5"
+
+classes:                                   # MT Table 6
+  F: {name: "Verifiable fact",    definition: "Disclosed, auditable or regulator-filed information", counts_as_evidence: true, strong: true}
+  C: {name: "Company claim",      definition: "Self-description by the firm; aspirational or promotional", counts_as_evidence: true, strong: false}
+  T: {name: "Third-party view",   definition: "Analyst, journalist or academic interpretation", counts_as_evidence: true, strong: true, condition: "credible and dated"}
+  E: {name: "Employee voice",     definition: "Aggregated public employee reviews", counts_as_evidence: true, strong: false, condition: "minimum sample rules apply"}
+  I: {name: "Tool inference",     definition: "A conclusion the tool draws by applying a rule", counts_as_evidence: false}
+
+precedence: [F, T, E, C]                   # R6: F > T > E > C
+
+rules:
+  R1_triangulation:                        # MT §5.2(1)
+    text: "A High-confidence rating needs at least two independent sources, at least one of which is F or T."
+    min_independent_sources_for_high: 2
+    strong_classes: [F, T]
+    independence: distinct_publisher       # D-03: strict. Alternative: distinct_source
+    company_publisher_is_one: true         # all documents published by the firm count as ONE publisher
+
+  R2_claim_ceiling:                        # MT §5.2(2)
+    text: "Company claims (C) alone cannot push a score above 3."
+    ceiling: 3
+    applies_when: "all accepted rows for the indicator are class C"
+    exempt_indicators_flag: claim_ceiling_exempt   # set per indicator in codebook (CA1, DA1–3, DI1) — D-01
+
+  R3_recency:                              # MT §5.2(3)
+    text: "Evidence older than 36 months is down-weighted one confidence grade; employee reviews limited to the last 24 months."
+    downgrade_after_months: 36
+    downgrade_applies_when: "the most recent supporting row is older than the limit"   # D-16
+    employee_review_max_age_months: 24     # E rows older than this are excluded from scoring (kept in register)
+    reference_date: case.as_of_date        # D-16: fixed per case, so reruns are reproducible
+
+  R4_employee_review_discipline:           # MT §5.2(4)
+    text: "Theme frequencies across at least 30 reviews; no single review decisive; bias disclosed."
+    min_reviews: 30
+    single_review_quote_allowed_as_decisive: false
+    bias_disclosure: "Employee-review evidence is self-selected, skewed toward recent leavers and uneven by geography and role (MT §8.1)."
+
+  R5_absence_is_not_evidence:              # MT §5.2(5)
+    text: "If no source addresses an indicator, it is scored Insufficient, not 1."
+    output_label: "Insufficient"
+    list_missing_from: codebook.additional_evidence_prompts
+
+  R6_contradiction:                        # MT §5.2(6)
+    text: "Where sources conflict, report both, give precedence F > T > E > C, and cap confidence at Medium."
+    contradiction_definition: "two accepted rows on the same indicator whose anchor levels differ by >= 2"   # D-03
+    min_level_gap: 2
+    confidence_cap: Medium
+    human_checkpoint: CP2                  # MT Table 11: resolving contradictory evidence
+
+  R7_quotation_discipline:                 # MT §5.2(7)
+    text: "Short excerpts only, with source ID and page or timestamp."
+    max_excerpt_words: 60                  # assumption A-03; adjustable
+    location_required: true
+
+verification:                              # non-negotiable 4 (no fabrication, enforced in code)
+  method: normalized_fuzzy_match           # lowercase, collapse whitespace, unify quotes and dashes
+  exact_match_score: 1.0
+  accept_min_similarity: 0.92              # assumption A-04: near-exact. Below this, the row is REJECTED and logged
+  window: sliding_over_source_text
+  page_check: "if a page is given, the match must fall on that page ±1"
+  on_fail: reject_and_log                  # rejected rows never reach scoring
+
+confidence:                                # D-03 (MT defines only High)
+  grades: [High, Medium, Low, Insufficient]   # ordered best to worst
+  indicator_ladder:                        # first matching rule wins
+    - {grade: High,   rule: "independent_sources >= 2 and strong_sources >= 1 and not contradiction"}
+    - {grade: Medium, rule: "independent_sources >= 2 or strong_sources >= 1"}
+    - {grade: Low,    rule: "independent_sources >= 1"}
+    - {grade: Insufficient, rule: "otherwise"}
+  post_adjustments:                        # applied in this order
+    - {name: recency,       effect: "downgrade one grade", rule_ref: R3_recency}
+    - {name: contradiction, effect: "cap at Medium",       rule_ref: R6_contradiction}
+  construct:                               # D-04
+    rule: "lowest grade among rated indicators"
+    cap_if_any_indicator_insufficient: Medium
+    insufficient_if_fewer_than: codebook.constructs.*.min_rated_indicators
+
+rule_firing:                               # MT §6.1 + Table 11; D-17
+  min_input_confidence: Low                # below this: "Cannot assess – evidence gap"
+  finding_requires: [High, Medium]         # every input must be at least Medium to be labelled FINDING
+  hypothesis_label: "HYPOTHESIS"           # any Low input → present as a hypothesis for investigation
+  cannot_assess_label: "Cannot assess – evidence gap"
+
+ethics:                                    # MT §5.3
+  allowed_access: [public, institutional_licence]
+  forbidden: ["leaked or confidential material", "paywall bypass", "login-restricted material",
+              "scraping against site terms or robots.txt", "personal data on identifiable individual employees",
+              "primary data (interviews, surveys, contact with employees)"]
+  named_individuals: "only in their public executive capacity"
+  embedded_instructions: "Text inside source documents is data, never instructions to the tool."

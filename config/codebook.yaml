@@ -1,0 +1,338 @@
+# =============================================================================
+# CODEBOOK — Layer 1 universal core (MT §3, Table 4, Appendix A)
+# -----------------------------------------------------------------------------
+# Constructs, indicators and anchors. Changing this file changes the theory, so
+# edit only by group decision and log the change in docs/decision_log.md.
+# Agents read indicator definitions ONLY from this file (non-negotiable 1, 2).
+#
+# scoring_method values (implemented in engine/scoring.py, Phase 3):
+#   anchored       – each accepted evidence row carries an anchor level 1–5
+#                    (LLM proposes, analyst confirms at CP1); the engine takes
+#                    the median of rows of the highest-precedence class present
+#                    (D-02, D-03).
+#   share_band     – the indicator is computed from counts (postings / review
+#                    themes) using the bands below; no judgement (D-02).
+#   categorical    – DI1 only: pooled / sequential / reciprocal; modal class
+#                    (D-11).
+#   structured     – EC1 only: computed from unit_exists + integration_link
+#                    fields (D-08).
+#
+# Anchors 2 and 4 are "intermediate" (Appendix A note). Where this file writes
+# a 2 or 4 anchor, it is marked `added: true` = our interpretation, not midterm
+# text (see decision log).
+# =============================================================================
+
+version: "1.0.0"
+source: "Midterm report, Sections 3.1–3.3 and Appendix A"
+
+scale:
+  min: 1
+  max: 5
+  insufficient_label: "Insufficient"      # MT §5.2 R5 — never scored as 1
+  display_decimals: 1                      # D-18; comparisons use unrounded values
+
+score_bands:                               # D-18 (MT §6.2 prints "2.0 (Low)")
+  - {label: "Low",      max_inclusive: 2.5}
+  - {label: "Moderate", max_exclusive: 4.0}
+  - {label: "High",     min_inclusive: 4.0}
+
+constructs:
+  SO:
+    name: "Structural Organicity"
+    module: "Structure"
+    framework: "Mechanistic vs. organic design (Burns & Stalker, in Daft); centralization, formalization, hierarchy"
+    verify: "Verify against Daft & Uppal, ch. [structure chapter — to be filled by M2]"
+    question: "Can the structure handle uncertain, iterative work?"
+    mean_of: [SO1, SO2, SO3, SO4]
+    min_rated_indicators: 2                # D-04
+  DI:
+    name: "Digital Work Interdependence"
+    module: "Technology"
+    framework: "Thompson's pooled, sequential and reciprocal interdependence and matching coordination mechanisms"
+    verify: "Verify against Daft & Uppal, ch. [technology chapter — to be filled by M3]"
+    question: "What coordination does the digital agenda demand, and is it supplied?"
+    mean_of: [DI2, DI3]                    # D-05: DI1 is classified, not scored (MT Table 4)
+    classifier: DI1
+    min_rated_indicators: 1
+  CA:
+    name: "Culture Adaptiveness"
+    module: "Culture"
+    framework: "Schein's three levels (artifacts, espoused values, basic assumptions); adaptive vs. unadaptive cultures"
+    verify: "Verify against Daft & Uppal, ch. [culture chapter — to be filled by M4]"
+    question: "Does observable behaviour support the espoused digital values?"
+    mean_of: [CA2, CA3, CA4]               # D-05: CA1 (espoused claim) is kept out of the mean
+    gap_reference: CA1
+    min_rated_indicators: 2
+  EC:
+    name: "Exploration Capacity"
+    module: "Learning"
+    framework: "March's exploration vs. exploitation; structural ambidexterity; learning organization"
+    verify: "Verify against Daft & Uppal, ch. [learning chapter — to be filled by M5]"
+    question: "Is the firm built to search for new capabilities, not only refine old ones?"
+    mean_of: [EC1, EC2, EC3]
+    min_rated_indicators: 2
+  DA:
+    name: "Digital Ambition"
+    module: "Environment–Strategy"
+    framework: "Stated strategy intensity, read against Duncan's environmental uncertainty"
+    verify: "Verify against Daft & Uppal, ch. [environment chapter — to be filled by M1]"
+    question: "How big and specific is the digital push? (demand side against which fit is tested)"
+    mean_of: [DA1, DA2, DA3]
+    min_rated_indicators: 2
+
+indicators:
+
+  # ---------------------------------------------------------------- SO -------
+  SO1:
+    construct: SO
+    name: "Reporting distance of the digital/technology head from the CEO"
+    typical_sources: ["annual_report", "leadership_page", "appointment_release"]
+    scoring_method: anchored
+    anchors:
+      1: "Digital head two or more layers below CEO"
+      2: {text: "Between 1 and 3: e.g. one layer below CEO but inside a support function with no top-team access", added: true}
+      3: "One layer below CEO (e.g. under CIO/COO)"
+      4: {text: "Direct report to CEO but not a member of the top/executive team", added: true}
+      5: "Direct report to CEO, member of top team"
+    additional_evidence_prompts:
+      - "Current organization chart or leadership page showing who the digital/technology head reports to"
+      - "Appointment press release naming the reporting line"
+
+  SO2:
+    construct: SO
+    name: "Decision authority for digital initiatives"
+    typical_sources: ["annual_report_governance", "earnings_call"]
+    scoring_method: anchored
+    ownership_sensitive: true              # MT Table 5 Ownership row; see modifiers.yaml
+    anchors:
+      1: "All digital decisions at board/central committee"
+      2: {text: "Central approval for nearly all initiatives; delegation only for trivial spend", added: true}
+      3: "Central approval above a stated threshold; some delegation"
+      4: {text: "Most initiatives decided in business/product units; central review only for strategic bets", added: true}
+      5: "Product/business teams own decisions within guardrails"
+    additional_evidence_prompts:
+      - "The actual approval path and value threshold for a technology pilot"
+      - "Governance section describing technology or digital committees"
+
+  SO3:
+    construct: SO
+    name: "Formalization signals in digital job postings"
+    typical_sources: ["job_postings"]
+    scoring_method: share_band
+    min_sample: 15                         # MT Table 4 "sample of 15–30"; D-16
+    max_sample: 30
+    row_codes: [autonomy, procedure, mixed]   # each sampled posting is coded once
+    bands:                                 # D-02 implementation, faithful to the 1/3/5 anchors
+      - {score: 1, rule: "procedure_share > 0.5",                       anchor: "Majority of postings stress procedure, compliance, sign-offs"}
+      - {score: 5, rule: "autonomy_share > 0.5",                        anchor: "Majority stress ownership, autonomy, experimentation"}
+      - {score: 2, rule: "procedure_share - autonomy_share >= 0.2",     anchor: "No majority; procedure leads by ≥20 pts", added: true}
+      - {score: 4, rule: "autonomy_share - procedure_share >= 0.2",     anchor: "No majority; autonomy leads by ≥20 pts", added: true}
+      - {score: 3, rule: "otherwise",                                    anchor: "Mixed language"}
+    additional_evidence_prompts:
+      - "A sample of 15–30 current digital/technology job postings from the careers page"
+
+  SO4:
+    construct: SO
+    name: "Employee-reported bureaucracy and approval friction"
+    typical_sources: ["employee_review_aggregate"]
+    scoring_method: share_band
+    evidence_class_required: E
+    min_sample: 30                         # MT §5.2 R4
+    theme: bureaucracy_approval_delay
+    bands:                                 # Appendix A gives 1/3/5 only; 2 and 4 are not used
+      - {score: 1, rule: "theme_share > 0.30",  anchor: "Bureaucracy/approval delay is a dominant review theme (>30%)"}
+      - {score: 3, rule: "theme_share >= 0.10", anchor: "Present but not dominant (10–30%)"}
+      - {score: 5, rule: "otherwise",           anchor: "Rare (<10%)"}
+    additional_evidence_prompts:
+      - "Theme counts from at least 30 public employee reviews from the last 24 months"
+
+  # ---------------------------------------------------------------- DI -------
+  DI1:
+    construct: DI
+    name: "Nature of announced digital work"
+    typical_sources: ["strategy_section", "investor_presentation"]
+    scoring_method: categorical
+    categories:
+      pooled:     "Standalone IT projects; units contribute independently"
+      sequential: "Handoff chains; output of one unit is input to the next"
+      reciprocal: "Cross-functional products and platforms; units adjust to each other back and forth"
+    claim_ceiling_exempt: true             # classification of announced work, not a performance score (D-01)
+    additional_evidence_prompts:
+      - "Strategy or investor-day description of the main digital programmes and which functions they span"
+
+  DI2:
+    construct: DI
+    name: "Coordination mechanisms in evidence"
+    typical_sources: ["org_announcement", "job_postings", "news"]
+    scoring_method: anchored
+    anchors:
+      1: "Coordination only via rules and hierarchy"
+      2: {text: "Mainly rules and hierarchy, with occasional project plans", added: true}
+      3: "Plans, PMOs, steering committees"
+      4: {text: "Plans/PMOs plus some cross-functional teams or integrator roles in parts of the firm", added: true}
+      5: "Cross-functional teams, squads, integrators in evidence"
+    additional_evidence_prompts:
+      - "Evidence of cross-functional teams, squads, product owners or integrator roles"
+
+  DI3:
+    construct: DI
+    name: "Integration of data and technology across business units"
+    typical_sources: ["annual_report_technology", "analyst_note"]
+    scoring_method: anchored
+    anchors:
+      1: "Siloed systems per unit"
+      2: {text: "Mostly siloed; integration projects announced but not in use", added: true}
+      3: "Partial shared platforms"
+      4: {text: "Shared platforms across most units; some legacy silos remain", added: true}
+      5: "Enterprise data/technology platform in use"
+    additional_evidence_prompts:
+      - "Technology section describing shared data or technology platforms and which units use them"
+
+  # ---------------------------------------------------------------- CA -------
+  CA1:
+    construct: CA
+    name: "Espoused digital and innovation values (Schein: espoused level)"
+    typical_sources: ["values_statement", "ceo_letter"]
+    scoring_method: anchored
+    claim_ceiling_exempt: true             # D-01: measures the claim itself
+    in_construct_mean: false               # D-05
+    strong_claim_min: 4                    # D-05: "CA1 strong claim" in M3
+    anchors:
+      1: {text: "No digital or innovation values espoused", added: true}
+      2: {text: "Passing mention of innovation among many values", added: true}
+      3: {text: "Innovation/digital is one stated value among several", added: true}
+      4: {text: "Digital/innovation values are prominent and repeated in leadership communication", added: true}
+      5: {text: "Digital/innovation/experimentation stated as a defining identity (e.g. 'digital-first', 'fail fast')", added: true}
+    note: "Appendix A gives no anchors for CA1; all five are our proposal (D-05)."
+
+  CA2:
+    construct: CA
+    name: "Artifacts consistent with values"
+    typical_sources: ["news", "careers_page", "company_blog"]
+    scoring_method: anchored
+    stage_sensitive: true                  # MT Table 5 Transformation-stage row
+    anchors:
+      1: "No artifacts beyond statements"
+      2: {text: "One-off or unresourced artifact (single event, no follow-up)", added: true}
+      3: "Occasional events or initiatives"
+      4: {text: "Recurring artifacts in some units", added: true}
+      5: "Repeated, resourced artifacts (labs, hackathons, open failure reviews)"
+    additional_evidence_prompts:
+      - "Dated reports of hackathons, labs, experimentation programmes or failure reviews"
+
+  CA3:
+    construct: CA
+    name: "Employee-perceived openness to change and innovation"
+    typical_sources: ["employee_review_aggregate"]
+    scoring_method: share_band
+    evidence_class_required: E
+    min_sample: 30
+    themes: [change_resistance, openness_innovation]
+    bands:                                 # "dominant" = >30% share and larger than the opposite theme (D-02)
+      - {score: 1, rule: "change_resistance_share > 0.30 and change_resistance_share > openness_innovation_share", anchor: "Change-resistance is a dominant review theme"}
+      - {score: 5, rule: "openness_innovation_share > 0.30 and openness_innovation_share > change_resistance_share", anchor: "Openness to innovation is a dominant theme"}
+      - {score: 3, rule: "otherwise", anchor: "Mixed"}
+    additional_evidence_prompts:
+      - "Theme counts for change resistance vs openness from at least 30 reviews in the last 24 months"
+
+  CA4:
+    construct: CA
+    name: "Leadership signals: digital capability on board/top team; message consistency"
+    typical_sources: ["board_profiles", "earnings_call"]
+    scoring_method: anchored
+    anchors:
+      1: "Inconsistent digital message; no digital capability at top"
+      2: {text: "Message consistent in some quarters only; no digital capability at top", added: true}
+      3: "Consistent message, limited capability"
+      4: {text: "Consistent message; one top-team or board member with digital expertise", added: true}
+      5: "Consistent message, digital expertise on board/top team"
+    additional_evidence_prompts:
+      - "Four consecutive earnings-call transcripts; board and top-team profiles"
+
+  # ---------------------------------------------------------------- EC -------
+  EC1:
+    construct: EC
+    name: "Separation of exploratory units with an integration link to the core"
+    typical_sources: ["annual_report", "press_release"]
+    scoring_method: structured
+    size_sensitive: true                   # MT Table 5 Size row
+    fields:                                # D-08
+      unit_exists: [yes, announced, no, unknown]
+      integration_link: [yes, partial, no, unknown]
+    mapping:                               # evaluated top to bottom; first match wins
+      - {when: "unit_exists == 'no'",                                        score: 1, anchor: "No exploratory unit evident (evidence of absence exists)"}
+      - {when: "unit_exists == 'announced'",                                 score: 2, anchor: "Unit announced but not yet operating", added: true}
+      - {when: "unit_exists == 'yes' and integration_link == 'yes'",         score: 5, anchor: "Unit exists with clear integration mechanism"}
+      - {when: "unit_exists == 'yes' and integration_link == 'partial'",     score: 4, anchor: "Unit exists; some integration mechanism", added: true}
+      - {when: "unit_exists == 'yes'",                                       score: 3, anchor: "Unit exists, link to core unclear"}
+    absence_rule: "unit_exists = 'no' needs an explicit statement of absence. Silence gives Insufficient (MT §5.2 R5, T5)."
+    additional_evidence_prompts:
+      - "Whether a digital lab, CVC or incubator exists, and how its outputs reach the core business"
+
+  EC2:
+    construct: EC
+    name: "Share of technology spend or hiring for new capabilities vs. maintenance"
+    typical_sources: ["annual_report", "job_postings"]
+    scoring_method: anchored
+    anchors:
+      1: "Spend/hiring overwhelmingly maintenance"
+      2: {text: "Mostly maintenance; small new-capability share", added: true}
+      3: "Mixed"
+      4: {text: "New-capability share is the larger part of disclosed spend or hiring", added: true}
+      5: "Substantial new-capability share"
+    additional_evidence_prompts:
+      - "Disclosed split of technology spend (run vs change), or the hiring mix in job postings"
+
+  EC3:
+    construct: EC
+    name: "Learning infrastructure"
+    typical_sources: ["sustainability_report", "hr_report", "news"]
+    scoring_method: anchored
+    anchors:
+      1: "No learning infrastructure disclosed"
+      2: {text: "Ad hoc training only", added: true}
+      3: "Programmes exist, scope limited"
+      4: {text: "Programmes cover most of the workforce, or external ecosystem partnerships are in place", added: true}
+      5: "Firm-wide reskilling and knowledge systems"
+    note: "Anchor 1 'no learning infrastructure disclosed' is applied only to a full annual/HR report that reports on training and shows none; otherwise silence is Insufficient (R5)."
+    additional_evidence_prompts:
+      - "HR or sustainability report section on reskilling, learning platforms and external partnerships"
+
+  # ---------------------------------------------------------------- DA -------
+  # D-10: Appendix A has one DA row; split into three with the same wording.
+  DA1:
+    construct: DA
+    name: "Specificity of digital targets"
+    typical_sources: ["annual_report", "investor_day", "earnings_call"]
+    scoring_method: anchored
+    claim_ceiling_exempt: true             # D-01
+    anchors:
+      1: "Vague digital mentions, no targets"
+      2: {text: "Directional goals without numbers", added: true}
+      3: "Stated priority, some targets"
+      4: {text: "Several quantified targets, some without dates", added: true}
+      5: "Specific, quantified and dated targets"
+  DA2:
+    construct: DA
+    name: "Investment commitment"
+    typical_sources: ["annual_report", "investor_day"]
+    scoring_method: anchored
+    claim_ceiling_exempt: true
+    anchors:
+      1: "No investment disclosed"
+      2: {text: "Investment mentioned without any figure", added: true}
+      3: "Stated priority with a partial or one-year figure"
+      4: {text: "Quantified investment, single horizon", added: true}
+      5: "Quantified multi-year investment commitment"
+  DA3:
+    construct: DA
+    name: "Centrality of digital in strategy narrative"
+    typical_sources: ["annual_report", "ceo_letter", "earnings_call"]
+    scoring_method: anchored
+    claim_ceiling_exempt: true
+    anchors:
+      1: "Passing mention"
+      2: {text: "Mentioned in several places but not a strategic pillar", added: true}
+      3: "One of several strategic priorities"
+      4: {text: "A lead strategic pillar", added: true}
+      5: "Central organising theme of the strategy"

@@ -1,0 +1,110 @@
+# =============================================================================
+# DIAGNOSIS RULES — Layer 1 (MT §6.1, Table 7)
+# Conditions are small expressions evaluated by engine/expr.py. It uses a
+# whitelisted-AST evaluator: names, numbers, comparisons, and/or/not, and the
+# functions mean() and abs(). No arbitrary code runs.
+# Names available:  SO DI CA EC DA                 construct scores
+#                   SO1 … DA3, CA1                 indicator scores
+#                   DI1                            category string
+#                   EC1_unit_exists, EC1_integration_link
+#                   t.<name>                       thresholds below, after modifiers
+# =============================================================================
+
+version: "1.0.0"
+source: "Midterm report, Section 6.1, Table 7"
+
+thresholds:                                # base values (MT Table 7). Modifiers shift so_low only.
+  da_high:    {value: 4.0, text: "DA ≥ 4"}
+  so_low:     {value: 2.5, text: "SO ≤ 2.5 (adjusted for regulation, uncertainty)"}
+  di2_low:    {value: 2.0, text: "DI2 ≤ 2"}
+  ca_gap:     {value: 2.5, text: "mean(CA2, CA3) ≤ 2.5"}
+  ec_low:     {value: 2.5, text: "EC ≤ 2.5"}
+  ca1_strong: {value: 4,   text: "CA1 strong claim (D-05)"}
+  fit_gap:    {value: 0.5, text: "DA − mean(SO, CA, EC) ≤ 0.5"}
+
+sensitivity:                               # MT §9; validation harness, Phase 4
+  shift_values: [-0.5, 0.0, 0.5]
+  shiftable: [so_low, ca_gap, ec_low, da_high, di2_low]
+
+rules:
+
+  M1:
+    name: "Mechanistic misfit"
+    inputs: [DA, SO]
+    condition: "DA >= t.da_high and SO <= t.so_low"
+    diagnosis: "High digital ambition run through a mechanistic structure; likely slow scaling of pilots."
+    theory: "Mechanistic vs. organic; environmental uncertainty"
+    options: [A, B, C]
+
+  M2:
+    name: "Coordination gap"
+    inputs: [DI1, DI2]
+    condition: "DI1 == 'reciprocal' and DI2 <= t.di2_low"
+    diagnosis: "Digital work needs mutual adjustment but coordination relies on rules and hierarchy."
+    theory: "Thompson interdependence"
+    options: [C, D]
+
+  M3:
+    name: "Culture say–do gap"
+    inputs: [CA1, CA2, CA3]
+    condition: "CA1 >= t.ca1_strong and mean(CA2, CA3) <= t.ca_gap"
+    # Transformation stage 'announced' with CA2 ≤ 2: mean(CA2, CA3) is replaced by CA3 (modifiers.yaml, D-15).
+    # If one of CA2 or CA3 is Insufficient, mean() uses the one that is rated. If both are Insufficient, the rule cannot be assessed.
+    diagnosis: "Espoused values not reflected in artifacts or employee experience; underlying assumptions may resist change."
+    theory: "Schein's three levels; adaptive culture"
+    options: [E]
+
+  M4:
+    name: "Exploration deficit"
+    inputs: [DA, EC]
+    condition: "DA >= t.da_high and EC <= t.ec_low"
+    diagnosis: "Ambition outpaces the learning and search capacity needed to build new capabilities."
+    theory: "March exploration vs. exploitation"
+    options: [F, G]
+
+  M5:
+    name: "Isolated exploration"
+    inputs: [EC1, SO]
+    condition: "EC1_unit_exists == 'yes' and EC1_integration_link != 'yes' and SO <= t.so_low"   # D-08
+    diagnosis: "Digital lab exists but cannot transfer innovations into a rigid core."
+    theory: "Structural ambidexterity"
+    options: [F]
+
+outcomes:
+
+  FIT:
+    inputs: [DA, SO, CA, EC]
+    condition: "DA - mean(SO, CA, EC) <= t.fit_gap and no_misfit_fired"
+    diagnosis: "Organization design appears to support ambition."
+    theory: "Contingency fit"
+
+  GAP:                                     # D-09: not in midterm
+    added: true
+    inputs: [DA, SO, CA, EC]
+    condition: "DA - mean(SO, CA, EC) > t.fit_gap and no_misfit_fired"
+    diagnosis: "Unexplained gap: ambition exceeds design, but no specific misfit pattern was found; investigate."
+    theory: "Contingency fit (residual)"
+
+  CANNOT_ASSESS:
+    text: "Cannot assess – evidence gap"
+    when: "an input of a rule has confidence below rule_firing.min_input_confidence (evidence_rules.yaml)"
+
+compound_tensions:                         # MT §6.1, paragraph after Table 7
+  pairs:
+    - pair: [M1, M3]
+      source: midterm
+      text: "Structural change alone will not work because underlying assumptions will reassert the old design."
+      sequencing: "Present culture levers (E) together with, or before, structural options (A, B, C)."
+    - pair: [M1, M2]
+      source: proposed                       # not in midterm; group to confirm
+      text: "Centralized structure and rule-based coordination reinforce each other; reciprocal digital work is blocked twice."
+      sequencing: "Option C addresses both; present C first."
+    - pair: [M4, M5]
+      source: proposed
+      text: "Exploration is both under-resourced and disconnected from the core."
+      sequencing: "Fix the integration link (F) before scaling exploration spend."
+    - pair: [M1, M4]
+      source: proposed
+      text: "High ambition is constrained by both structure and learning capacity."
+      sequencing: "Structural options first. Exploration added to a rigid core tends to stay isolated (M5 risk)."
+  generic_text: "Two or more misfits fired together. Their recommendations interact; read the options jointly."

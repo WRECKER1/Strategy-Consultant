@@ -1,0 +1,74 @@
+# =============================================================================
+# OPTIONS LIBRARY — Layer 1 (MT §6.3, Table 8)
+# The recommendation agent RETRIEVES options from here and tailors only the
+# explanation to the firm's evidence. It may not create options. Anything new
+# must be labelled "analyst-suggested, not in library" (non-negotiable 1).
+# The analyst chooses among options at CP3. The tool never picks one (MT §6.3).
+# =============================================================================
+
+version: "1.0.0"
+source: "Midterm report, Section 6.3, Table 8"
+
+options:
+  A:
+    title: "Elevate digital head to CEO direct report with own budget"
+    addresses: [M1]
+    benefit: "Faster decisions, visible priority"
+    risk: "Power conflict with CIO and business heads"
+    assumption: "Top team will share authority"
+    theory: "Centralization/hierarchy dimensions of structure (mechanistic vs. organic)"
+    evidence_hooks: [SO1, SO2]             # indicators whose evidence the tailoring should cite
+  B:
+    title: "Delegation thresholds: pilots below a set value approved within business unit"
+    addresses: [M1]
+    benefit: "Pilot speed without full restructuring"
+    risk: "Fragmentation, duplicate tools"
+    assumption: "Risk function accepts tiered controls"
+    theory: "Decentralization of decision authority"
+    evidence_hooks: [SO2, SO4]
+  C:
+    title: "Cross-functional product teams overlaid on functions (matrix)"
+    addresses: [M1, M2]
+    benefit: "Mutual adjustment for reciprocal work"
+    risk: "Dual reporting, accountability ambiguity"
+    assumption: "Managers trained for matrix roles"
+    theory: "Thompson: reciprocal interdependence requires mutual adjustment; matrix structure"
+    evidence_hooks: [DI1, DI2, SO3]
+  D:
+    title: "Full-time integrator roles or platform owners"
+    addresses: [M2]
+    benefit: "Coordination without full redesign"
+    risk: "Integrators lack authority"
+    assumption: "Integrators given decision rights"
+    theory: "Horizontal linkage mechanisms (integrators)"
+    evidence_hooks: [DI2, DI3]
+  E:
+    title: "Symbolic and behavioural levers: leaders model experimentation, change rewards and promotion criteria"
+    addresses: [M3]
+    benefit: "Shifts artifacts and, over time, assumptions"
+    risk: "Slow; seen as cosmetic if rewards don't change"
+    assumption: "Leadership is consistent over 2–3 years"
+    theory: "Schein: leaders shape culture through artifacts and reward systems"
+    evidence_hooks: [CA1, CA2, CA3, CA4]
+  F:
+    title: "Structural ambidexterity: separate exploratory unit with senior integration link"
+    addresses: [M4, M5]
+    benefit: "Protects exploration from core's efficiency logic"
+    risk: "Isolation, cultural split, 'two-tier' resentment"
+    assumption: "Senior team actively integrates"
+    theory: "March; structural ambidexterity"
+    evidence_hooks: [EC1, EC2]
+  G:
+    title: "Contextual ambidexterity: time and budget for exploration inside existing units"
+    addresses: [M4]
+    benefit: "Lower cost, wide engagement"
+    risk: "Exploitation crowds out exploration"
+    assumption: "Strong learning culture already exists"
+    theory: "Contextual ambidexterity; learning organization"
+    evidence_hooks: [EC2, EC3, CA3]
+
+tailoring_rules:                           # constraints on the recommendation agent (Phase 2)
+  - "Cite at least one accepted evidence ID for every firm-specific statement."
+  - "Do not change the option's title, benefit, risk or assumption. Add a firm-specific 'why it matters here' and 'what would make it fail here'."
+  - "State which key assumption public data cannot confirm and add it to the additional-evidence-needed list."
+  - "New ideas go only in an 'analyst-suggested, not in library' section, marked as such."

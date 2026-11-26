@@ -1,0 +1,35 @@
+# =============================================================================
+# EVIDENCE REGISTER SCHEMA (Appendix B, extended for traceability, non-negotiable 3)
+# One row per excerpt. The extraction agent proposes a row, the classification
+# agent adds a class, the verifier adds verification fields, and the analyst
+# decides at CP1. Only rows with analyst_decision = accepted reach scoring.
+# =============================================================================
+
+version: "1.0.0"
+source: "Midterm report, Appendix B; MT §4.3"
+
+evidence_row:
+  evidence_id:        {type: string, pattern: "^E\\d{3,4}$", set_by: orchestrator}
+  source_id:          {type: string, pattern: "^S\\d{2,3}$", set_by: extraction_agent}
+  excerpt:            {type: string, max_words: 60, set_by: extraction_agent, note: "verbatim from source"}
+  location:           {type: string, set_by: extraction_agent, note: "page number, section, or timestamp"}
+  indicator:          {type: string, enum_from: codebook.indicators, set_by: extraction_agent}
+  proposed_level:     {type: "integer 1-5 | null", set_by: extraction_agent, note: "for anchored indicators; null for share_band, categorical and structured"}
+  proposed_category:  {type: "enum | null", set_by: extraction_agent, note: "DI1 only"}
+  structured_fields:  {type: "object | null", set_by: extraction_agent, note: "EC1: unit_exists, integration_link; SO3: posting_code; SO4/CA3: theme, count, n_reviews, period_end"}
+  level_scope:        {type: enum, values: [firm, parent, business_unit], default: firm, note: "parent is required for SO2 under SOE/subsidiary ownership"}
+  rationale:          {type: string, set_by: extraction_agent, note: "which anchor text it matches and why"}
+  evidence_class:     {type: enum, values: [F, C, T, E], set_by: classification_agent}
+  class_justification: {type: string, set_by: classification_agent}
+  source_date:        {type: date, set_by: orchestrator, from: source_register}
+  verification_status: {type: enum, values: [verified_exact, verified_near, rejected_not_found, rejected_page_mismatch], set_by: verifier}
+  similarity:         {type: float, set_by: verifier}
+  flags:              {type: list, values: [duplicate, stale_36m, e_older_24m, e_sample_below_30, contradiction, embedded_instruction], set_by: verifier}
+  analyst_decision:   {type: enum, values: [pending, accepted, rejected, edited], default: pending, set_by: analyst_CP1}
+  analyst_level:      {type: "integer 1-5 | null", set_by: analyst_CP1, note: "final row level if the analyst edited it"}
+  analyst_note:       {type: string, set_by: analyst_CP1}
+  coder:              {type: string, note: "agent name or member initials (Appendix B 'Coder')"}
+
+run_log_event:                             # JSON Lines, one event per line
+  fields: [timestamp, run_id, case_id, stage, actor, action, inputs_hash, outputs_hash, detail, model, input_tokens, output_tokens, cost_usd]
+  actor_values: [orchestrator, intake_agent, extraction_agent, classification_agent, verifier, scoring_engine, diagnosis_engine, recommendation_agent, report_agent, analyst]

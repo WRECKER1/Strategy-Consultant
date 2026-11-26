@@ -1,0 +1,33 @@
+# =============================================================================
+# SOURCE-PACK CHECKLIST (MT §2 Table 1 stage 2; MT §5.3; Appendix B)
+# The intake agent compares the case's source register with this list and
+# reports missing source types and the indicators they would have fed.
+# Missing sources are reported, not filled in.
+# =============================================================================
+
+version: "1.0.0"
+source: "Midterm report, Section 2 (Table 1, stage 2), Section 5.3, Appendix B"
+
+source_types:
+  annual_report:              {target: 2, min: 1, typical_class: [F, C], feeds: [SO1, SO2, DI1, DI3, CA1, EC1, EC2, EC3, DA1, DA2, DA3]}
+  earnings_call_transcript:   {target: 4, min: 2, typical_class: [C],    feeds: [SO2, CA4, DA1, DA3], note: "4 consecutive quarters for CA4 consistency"}
+  investor_presentation:      {target: 1, min: 0, typical_class: [C],    feeds: [DI1, DA1, DA2, DA3]}
+  careers_page:               {target: 1, min: 0, typical_class: [C],    feeds: [CA2]}
+  job_postings:               {target: 30, min: 15, unit: "postings", typical_class: [F], feeds: [SO3, DI2, EC2], note: "count postings, not documents"}
+  leadership_announcement:    {target: 2, min: 1, typical_class: [F, C], feeds: [SO1, CA4]}
+  news_article:               {target: 5, min: 3, typical_class: [T],    feeds: [SO2, DI2, CA2, EC1, EC3], note: "credible, dated"}
+  employee_review_aggregate:  {target: 1, min: 1, unit: "aggregate covering ≥30 reviews in 24 months", typical_class: [E], feeds: [SO4, CA3]}
+  board_profiles:             {target: 1, min: 0, typical_class: [F],    feeds: [CA4]}
+  sustainability_or_hr_report: {target: 1, min: 0, typical_class: [F, C], feeds: [EC3]}
+  analyst_note:               {target: 1, min: 0, typical_class: [T],    feeds: [DI3, EC2]}
+  parent_or_ministry_document: {target: 1, min: 0, required_if: "ownership in [state_owned, mnc_subsidiary]", typical_class: [F], feeds: [SO2]}
+  course_case:                {target: 1, min: 0, typical_class: [T], note: "licensed course material; treated as third-party (case author)"}
+  synthetic_document:         {target: 0, min: 0, note: "T1–T5 only; every output is marked SYNTHETIC"}
+
+source_register_fields:                    # Appendix B
+  required: [source_id, title, publisher, date, url_or_database, access_type, source_type, default_class, date_collected, collector, file]
+  access_type_values: [public, institutional_licence]
+  id_pattern: "^S\\d{2,3}$"                # S01, S02 …
+
+file_formats_accepted: [".pdf", ".txt", ".md", ".docx", ".html"]
+max_file_mb: 30

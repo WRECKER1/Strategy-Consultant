@@ -30,7 +30,7 @@ from engine import verify
 from engine.common import ROOT, RUNS_DIR, RunLog, load_config, load_runtime, read_json, write_json
 from engine.config_check import check as config_check, fingerprint
 from engine.intake import load_case, run_intake
-from engine.sources import chunk_source, load_source
+from engine.sources import batch_chunks, chunk_pages, load_source, prefilter_pages
 
 STAGES = ["INTAKE", "EXTRACT", "VERIFY_QUOTES", "CLASSIFY", "VERIFY_FULL", "CP1", "CP2",
           "SCORE", "DIAGNOSE", "RECOMMEND", "CP3", "REPORT", "DONE"]
@@ -92,23 +92,56 @@ class Run:
             raise Paused("intake_failed", "Intake errors (fix case files, then resume):\n  - " + "\n  - ".join(report["errors"]))
         self.advance("EXTRACT")
 
+    def _mode_value(self, key: str):
+        v = self.runtime[key]
+        return v[self.runtime["agent_mode"] if self.runtime["agent_mode"] in v else "api"] if isinstance(v, dict) else v
+
+    def _pause_for_paste(self, stage: str, pending: list[PasteRequired]):
+        """Paste mode: all prompts of a stage are written at once so several members can work in parallel."""
+        plan = self.dir / "paste" / "PASTE_PLAN.md"
+        lines = [f"# Paste plan: {stage} ({len(pending)} prompts)", "",
+                 "For each prompt: open a NEW chat in claude.ai, attach or paste the .prompt.md file, and save Claude's",
+                 "JSON reply in this folder under the reply name shown. When all replies are saved, run `resume`.",
+                 "Prompts are independent, so members can do them in parallel. Suggested split:", "",
+                 "| # | Prompt file | Save reply as | Member | Done |", "|---|---|---|---|---|"]
+        members = [f"M{i}" for i in range(1, 8)]
+        for i, p in enumerate(pending):
+            done = "yes" if p.reply_path.exists() else ""
+            lines.append(f"| {i + 1} | {p.prompt_path.name} | {p.reply_path.name} | {members[i % 7]} | {done} |")
+        plan.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        self.log.event(stage, "orchestrator", "paste_prompts_written", detail={"n": len(pending), "plan": str(plan)})
+        raise Paused("awaiting_paste", f"PASTE MODE: {len(pending)} prompt(s) for {stage} are waiting. "
+                     f"See {plan}. Save every reply, then resume.")
+
     def EXTRACT(self):
-        rows: list[dict] = []
-        injections = []
+        pf = self.cfg["prefilter"]
+        all_chunks, filt = [], []
         for sid, doc in self.docs().items():
-            src = self.register[sid]
-            chunks = chunk_source(doc, self.runtime["chunk_words"])
-            self.log.event("extraction", "orchestrator", "chunked", detail={"source_id": sid, "pages": len(doc.pages),
-                           "words": doc.word_count, "chunks": len(chunks)})
-            for ch in chunks:
-                hits = verify.detect_injection(ch.text)
-                new, meta = agents.extract_chunk(self.gw, self.cfg, ch, src)
-                if hits or meta["embedded_instruction_detected"]:
-                    injections.append({"source_id": sid, "chunk": ch.index, "patterns": hits,
-                                       "agent_report": meta["embedded_instruction_text"]})
-                    for r in new:
-                        r["flags"] = ["embedded_instruction"]
-                rows.extend(new)
+            kept, skipped = prefilter_pages(doc, pf)
+            chunks = chunk_pages(doc, kept, self.runtime["chunk_words"])
+            all_chunks.extend(chunks)
+            filt.append({"source_id": sid, "pages": len(doc.pages), "kept": len(kept), "skipped_pages": skipped,
+                         "words": doc.word_count, "chunks": len(chunks)})
+        write_json(self.dir / "prefilter_report.json", filt)
+        self.log.event("extraction", "orchestrator", "prefiltered_and_chunked", detail=filt)
+        batches = batch_chunks(all_chunks, self._mode_value("extraction_batch_words"))
+        rows: list[dict] = []
+        injections, pending = [], []
+        for bi, batch in enumerate(batches):
+            try:
+                new, meta = agents.extract_batch(self.gw, self.cfg, f"b{bi:03d}", batch, self.register)
+            except PasteRequired as p:
+                pending.append(p)
+                continue
+            hits = [h for ch in batch for h in verify.detect_injection(ch.text)]
+            if hits or meta["embedded_instruction_detected"]:
+                injections.append({"batch": bi, "sources": sorted({c.source_id for c in batch}), "patterns": hits,
+                                   "agent_report": meta["embedded_instruction_text"]})
+                for r in new:
+                    r["flags"] = ["embedded_instruction"]
+            rows.extend(new)
+        if pending:
+            self._pause_for_paste("EXTRACT", pending)
         for i, r in enumerate(rows, start=1):
             r["evidence_id"] = f"E{i:03d}"
             r["source_date"] = self.register[r["source_id"]].get("date")
@@ -132,7 +165,9 @@ class Run:
     def CLASSIFY(self):
         rows = self.rows
         todo = [r for r in rows if r["analyst_decision"] != "auto_rejected"]
-        agents.classify_rows(self.gw, todo, self.register)
+        pending = agents.classify_rows(self.gw, todo, self.register, self._mode_value("classification_batch_rows"))
+        if pending:
+            self._pause_for_paste("CLASSIFY", pending)
         self.save_rows(rows)
         self.advance("VERIFY_FULL")
 
@@ -254,11 +289,11 @@ class Run:
             self.save()
             self.log.event(self.state["stage"], "orchestrator", "paused", detail=p.status)
             msg = p.message
-        except PasteRequired as p:
+        except PasteRequired as p:          # single-prompt stages (recommendation, report)
             self.state["status"] = "awaiting_paste"
             self.save()
-            msg = (f"PASTE MODE: open {p.prompt_path}, paste it into a new Claude chat, save the JSON reply as "
-                   f"{p.reply_path}, then resume. (One prompt at a time.)")
+            msg = (f"PASTE MODE: open {p.prompt_path} in a new claude.ai chat (attach or paste it), save the JSON reply as "
+                   f"{p.reply_path}, then resume.")
         except (ReplayMiss, BudgetExceeded, AgentOutputInvalid) as e:
             self.state["status"] = "error"
             self.save()

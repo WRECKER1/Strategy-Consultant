@@ -119,3 +119,46 @@ def chunk_source(doc: SourceDoc, chunk_words: int) -> list[Chunk]:
         words += n
     flush()
     return chunks
+
+
+def prefilter_pages(doc: SourceDoc, pf: dict) -> tuple[list[int], list[int]]:
+    """D-28: deterministic keyword filter for long documents. Returns (kept, skipped) page numbers."""
+    pages = sorted(doc.pages)
+    if len(pages) <= pf["apply_when_pages_over"]:
+        return pages, []
+    kws = [k.lower() for group in pf["keywords"].values() for k in group]
+    pattern = re.compile(r"\b(?:" + "|".join(re.escape(k) for k in kws) + ")", re.I)
+    first = set(pages[: pf["always_keep_first_pages"]])
+    hits = {p for p in pages if p in first or pattern.search(doc.pages[p] or "")}
+    n = pf.get("keep_neighbour_pages", 0)
+    if n:
+        hits |= {q for p in list(hits) for q in range(p - n, p + n + 1) if q in doc.pages}
+    kept = [p for p in pages if p in hits]
+    return kept, [p for p in pages if p not in hits]
+
+
+def chunk_pages(doc: SourceDoc, keep: list[int], chunk_words: int) -> list[Chunk]:
+    """chunk_source restricted to the kept pages."""
+    sub = SourceDoc(doc.source_id, doc.path, {p: doc.pages[p] for p in keep})
+    return chunk_source(sub, chunk_words)
+
+
+def batch_chunks(chunks: list[Chunk], batch_words: int) -> list[list[Chunk]]:
+    """Group consecutive chunks (any source) into prompts of about batch_words words.
+
+    API mode uses small batches (cheaper retries). Paste mode uses large batches,
+    so a person handles fewer prompts in claude.ai.
+    """
+    batches: list[list[Chunk]] = []
+    cur: list[Chunk] = []
+    words = 0
+    for ch in chunks:
+        n = len(ch.text.split())
+        if cur and words + n > batch_words:
+            batches.append(cur)
+            cur, words = [], 0
+        cur.append(ch)
+        words += n
+    if cur:
+        batches.append(cur)
+    return batches

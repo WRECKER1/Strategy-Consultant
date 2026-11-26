@@ -25,7 +25,7 @@ from engine import expr
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "config"
 CORE_FILES = ["codebook.yaml", "evidence_rules.yaml", "modifiers.yaml", "rules.yaml",
-              "options.yaml", "source_checklist.yaml", "register_schema.yaml"]
+              "options.yaml", "source_checklist.yaml", "register_schema.yaml", "prefilter.yaml"]
 
 
 def load_all() -> dict:

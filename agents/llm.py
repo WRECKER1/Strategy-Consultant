@@ -144,13 +144,19 @@ class Gateway:
         reply_path = folder / f"{call_id}.reply.json"
         if reply_path.exists():
             raw = reply_path.read_text(encoding="utf-8")
-            m = re.search(r"\{.*\}", raw, re.S)          # tolerate ```json fences around the reply
+            m = re.search(r"\{.*\}", raw, re.S)          # tolerate ```json fences and text around the reply
             if not m:
-                raise AgentOutputInvalid(f"{reply_path}: no JSON object found")
-            return json.loads(m.group(0))
+                raise AgentOutputInvalid(f"{reply_path.name}: no JSON object found. Save only Claude's JSON reply.")
+            try:
+                return json.loads(m.group(0))
+            except json.JSONDecodeError as exc:
+                raise AgentOutputInvalid(
+                    f"{reply_path.name}: reply is not valid JSON ({exc.msg}, line {exc.lineno}). If the reply was cut "
+                    "off, ask Claude in the same chat: 'Continue the JSON exactly where you stopped', join the parts, "
+                    "and save again.") from exc
         folder.mkdir(parents=True, exist_ok=True)
         prompt_path.write_text(
-            "# PASTE-MODE PROMPT — copy everything below the line into a NEW Claude chat\n"
+            "# PASTE-MODE PROMPT — attach this file to a NEW claude.ai chat (or paste everything below the line)\n"
             f"# Agent: {agent} | Call: {call_id} | Cache key: {key}\n"
             f"# Save Claude's reply (the JSON only) as: {reply_path.name} in this folder, then resume the run.\n"
             "---\n\n"

@@ -22,7 +22,7 @@ def load_yaml(path: Path) -> Any:
 
 
 def load_config() -> dict:
-    names = ["codebook", "evidence_rules", "modifiers", "rules", "options", "source_checklist", "register_schema"]
+    names = ["codebook", "evidence_rules", "modifiers", "rules", "options", "source_checklist", "register_schema", "prefilter"]
     return {n: load_yaml(CONFIG_DIR / f"{n}.yaml") for n in names}
 
 

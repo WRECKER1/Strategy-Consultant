@@ -18,7 +18,7 @@ def _obj(props: dict, required: list[str] | None = None) -> dict:
             "additionalProperties": False}
 
 
-def extraction_schema(codebook: dict) -> dict:
+def extraction_schema(codebook: dict, source_ids: list[str] | None = None) -> dict:
     inds = sorted(codebook["indicators"])
     di1 = sorted(codebook["indicators"]["DI1"]["categories"])
     ec1 = codebook["indicators"]["EC1"]["fields"]
@@ -33,6 +33,7 @@ def extraction_schema(codebook: dict) -> dict:
         "integration_link": _nullable({"type": "string", "enum": ec1["integration_link"]}),
     })
     row = _obj({
+        "source_id": {"type": "string", "enum": sorted(source_ids)} if source_ids else {"type": "string"},
         "indicator": {"type": "string", "enum": inds},
         "excerpt": {"type": "string"},
         "location": {"type": "string"},

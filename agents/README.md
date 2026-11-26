@@ -74,8 +74,8 @@ Agent outputs are constrained by JSON Schema in API mode and validated against t
 ## Running a case (Windows PowerShell, from the repo folder, with the venv active)
 
 ```powershell
-# 1. start a run (api mode needs the API key; paste mode needs nothing)
-python -m engine.orchestrator run --case cases\T1_coherent_misfit --mode api --analyst "Your Name"
+# 1. start a run (paste mode is the default; it writes the prompts and a PASTE_PLAN.md, then pauses)
+python -m engine.orchestrator run --case cases\T1_coherent_misfit --analyst "Your Name"
 
 # 2. CP1: open runs\T1_coherent_misfit\<run_id>\cp1_review.csv in Excel.
 #    Set analyst_decision per row: accepted / rejected / edited (edited: fill analyst_level or analyst_class).
@@ -90,8 +90,14 @@ python -m engine.orchestrator status --run runs\T1_coherent_misfit\<run_id>
 ```
 
 **Live stress demo (a), deleting sources:** `run --case ... --exclude S02,S03,S05`. Remaining chunks come from the cache, so this costs nothing and works offline.
-**Live stress demo (b), injecting a contradiction:** add the new file and its register row, then `run` again. Only the new source is sent to the model.
+**Live stress demo (b), injecting a contradiction:** add the new file and its register row, then `run` again. Only the prompt holding the new source needs a claude.ai round. Keep a saved reply as backup.
 **Replay mode** (`--mode replay`) never calls the API. With a warm cache, it reproduces a previous run exactly.
 
-## Paste mode (no API credit)
-The run stops at each LLM call and writes `paste/<call>.prompt.md`. Paste that whole file into a new Claude chat and save the JSON reply as `paste/<call>.reply.json`. Then run `resume`. The reply is validated exactly like an API reply. Every paste-mode answer is labelled as manual in the cache and the run log.
+## Paste mode: the default (no API credit, D-29, D-30)
+1. `run` (or `resume`) writes **all** prompts of the current stage to `runs\<case>\<run_id>\paste\`, plus `PASTE_PLAN.md`, which assigns them to M1–M7.
+2. For each prompt: open a **new** claude.ai chat, attach the `.prompt.md` file (or paste its text), and send.
+3. Save Claude's reply as the `.reply.json` name given in the plan, in the same folder. Code fences around the JSON are fine.
+4. When every reply of the stage is saved, run `resume`. The tool validates each reply against the schema; then the verifier checks every quote against the source text.
+5. If a reply is cut off, ask Claude in the same chat to "continue the JSON exactly where you stopped", join the two parts, and save.
+
+Stages that need prompts: EXTRACT (several), CLASSIFY (1–2), RECOMMEND (1), REPORT (1). Every paste reply is saved in `cache\`, so reruns and **replay mode** need no claude.ai at all.

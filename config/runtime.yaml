@@ -12,7 +12,7 @@ version: "1.0.0"
 #   paste  – write each prompt to a file; you run it in Claude Pro and save the
 #            JSON reply next to it, then resume (free, slow)
 #   replay – use cached responses only; never calls the API (demo safety net)
-agent_mode: api
+agent_mode: paste            # no API credit available (26 Nov): agents run in claude.ai via paste mode
 
 model: claude-opus-5-5
 max_tokens: 16000
@@ -24,6 +24,12 @@ effort:                       # output_config.effort per agent
   report: medium
 
 chunk_words: 3500             # source text is split on page boundaries into chunks of about this size
+extraction_batch_words:       # words of source text per extraction prompt
+  api: 3500
+  paste: 12000                # fewer, larger prompts for claude.ai (D-29)
+classification_batch_rows:
+  api: 40
+  paste: 150
 cache_dir: cache              # cached agent responses: cache/<case_id>/<agent>/<hash>.json
 max_cost_usd_per_run: 10.0    # the run stops before any call that would take it over this amount
 

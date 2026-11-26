@@ -1,0 +1,30 @@
+# =============================================================================
+# PAGE PRE-FILTER (D-28). Part of the core config and of the fingerprint,
+# because it decides which pages the extraction agent reads.
+# -----------------------------------------------------------------------------
+# Long documents (annual reports run to 300+ pages, mostly financial
+# statements) are reduced deterministically before extraction. A page is kept
+# if it contains any keyword below. The first pages are always kept, since they
+# carry the chair/CEO letter and the strategy. Every skipped page is listed in
+# the run log, and the report states the filter as a limitation. The
+# AI-vs-manual validation (Phase 4) measures whether it caused misses.
+# Matching is case-insensitive; a keyword matches at the start of a word ("delegat" matches "delegation").
+# =============================================================================
+
+version: "1.0.0"
+apply_when_pages_over: 30            # shorter documents are read in full
+always_keep_first_pages: 12
+keep_neighbour_pages: 0              # set to 1 to also keep the page before and after each hit
+
+keywords:                            # grouped by the indicators they serve, for traceability
+  structure:     [reports to, reporting to, chief digital, chief technology, chief information, cdo, cto, cio,
+                  organisation structure, organization structure, organisational, organizational, delegat,
+                  approval, committee, council, governance of technology, decision-making, decision making,
+                  hierarch, layers, bureaucra, centrali, decentrali]
+  technology:    [digital, platform, cross-functional, cross functional, squad, tribe, agile, product team,
+                  product owner, integrat, data lake, cloud, erp, api, interoperab, shared service]
+  culture:       [culture, values, innovation, experiment, hackathon, fail, mindset, behaviour, behavior,
+                  employee engagement, ways of working, change management]
+  learning:      [labs, innovation lab, digital lab, research lab, incubat, accelerat, venture, start-up, startup, ecosystem, partnership, reskill, upskill,
+                  training, learning, academy, capability, research and development, r&d, new business]
+  ambition:      [transformation, strategy, strategic, target, invest in, investing in, capex, capital expenditure, roadmap, vision, priority]

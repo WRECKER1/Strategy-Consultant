@@ -20,7 +20,7 @@ from engine import orchestrator, verify
 from engine.common import ROOT, load_config, read_json
 from engine.config_check import check
 from engine.intake import load_case, run_intake
-from engine.sources import chunk_source, load_source
+from engine.sources import SourceDoc, batch_chunks, chunk_source, load_source, prefilter_pages
 
 T1 = ROOT / "cases" / "T1_coherent_misfit"
 
@@ -68,8 +68,10 @@ SCRIPT["S04"] = [row("SO3", "Ensure strict adherence to documented SOPs", f"Post
 
 def fake_call(self, agent, call_id, system, user, schema, stage):
     if agent == "extraction_agent":
-        sid = call_id.split("_")[1]
-        data = {"rows": SCRIPT.get(sid, []), "embedded_instruction_detected": False, "embedded_instruction_text": None}
+        import re
+        sids = sorted(set(re.findall(r'<source_document source_id="(S\d+)"', user)))
+        rows = [dict(r, source_id=sid) for sid in sids for r in SCRIPT.get(sid, [])]
+        data = {"rows": rows, "embedded_instruction_detected": False, "embedded_instruction_text": None}
     elif agent == "classification_agent":
         import json, re
         items = json.loads(re.search(r"```json\n(.*)\n```", user, re.S).group(1))
@@ -222,3 +224,27 @@ def test_orchestrator_t1_to_cp2(monkeypatch, tmp_path):
     actors = {e["actor"] for e in log}
     assert {"orchestrator", "intake_agent", "extraction_agent", "classification_agent", "verifier", "analyst"} <= actors
     assert read_json(run.dir / "state.json")["config_fingerprint"]
+
+
+def test_prefilter_keeps_relevant_pages(cfg):
+    pages = {i: "Notes to the standalone financial statements: deferred tax, lease liabilities." for i in range(1, 61)}
+    pages[40] = "The Chief Digital Officer reports to the Managing Director."
+    pages[55] = "We launched a reskilling academy for 5,000 employees."
+    kept, skipped = prefilter_pages(SourceDoc("S01", Path("x"), pages), cfg["prefilter"])
+    assert set(kept) == set(range(1, 13)) | {40, 55}
+    assert len(skipped) == 60 - 14
+    short = {i: "deferred tax" for i in range(1, 10)}
+    assert prefilter_pages(SourceDoc("S02", Path("x"), short), cfg["prefilter"]) == (list(range(1, 10)), [])
+
+
+def test_paste_mode_writes_all_prompts_with_plan(monkeypatch, tmp_path):
+    monkeypatch.setattr(orchestrator, "RUNS_DIR", tmp_path / "runs")
+    monkeypatch.setattr(llm.Gateway, "_cache_path", lambda self, a, k: tmp_path / "cache" / a / f"{k}.json")
+    run = orchestrator.new_run(T1, "paste", [])
+    run.runtime["extraction_batch_words"]["paste"] = 300          # force several prompts for the test
+    msg = run.drive()
+    assert run.state["status"] == "awaiting_paste", msg
+    prompts = sorted((run.dir / "paste").glob("*.prompt.md"))
+    assert len(prompts) > 1
+    plan = (run.dir / "paste" / "PASTE_PLAN.md").read_text()
+    assert all(p.name in plan for p in prompts) and "| M1 |" in plan

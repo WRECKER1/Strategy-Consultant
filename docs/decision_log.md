@@ -36,6 +36,9 @@ All design decisions made since the midterm. You asked me to "go with your intui
 | D-25 | Only flagged rows are excluded from bulk acceptance at CP1. The bulk action is logged with the analyst's name, so the demo can show both the quick path and individual review. | MT Table 11 row 1 | `engine/checkpoints.py` |
 | D-26 | A source passage that looks like an instruction to the tool is flagged by a code pattern check **and** by the extraction agent's own report. Every row from that chunk carries `embedded_instruction` and needs individual review. | MT §5.3 | `engine/verify.py`, `agents/prompts/extraction.md` |
 | D-27 | Agent responses are cached by a hash of (model, prompt, input, schema). Reruns with unchanged inputs are free and identical. Replay mode is the demo fallback. | demo reliability | `agents/llm.py` |
+| D-28 | Page pre-filter: documents over 30 pages keep only their first 12 pages plus pages that match keywords (structure, technology, culture, learning, ambition). Every skipped page is logged, and the report lists the filter as a limitation. The AI-vs-manual test checks it for misses. It is part of the core config and fingerprint. | MT §2 stage 3 (effort) | `config/prefilter.yaml`, `engine/sources.py` |
+| D-29 | Paste mode is built for claude.ai. Prompts hold about 12,000 words of source text, and documents are mixed in one prompt with a `source_id` on every row. Classification batches hold 150 rows. **All prompts of a stage are written at once**, with a `PASTE_PLAN.md` that splits them across M1–M7 so they can be done in parallel. | No API credit (26 Nov) | `config/runtime.yaml`, `engine/orchestrator.py` |
+| D-30 | No API credit will be bought (26 Nov). Paste mode is the default. API mode stays in the code, but it has not been run against the live API and must not be presented as tested. | User decision | `config/runtime.yaml` |
 
 ## Assumptions
 
@@ -48,32 +51,19 @@ All design decisions made since the midterm. You asked me to "go with your intui
 | A-05 | Demo laptop runs Windows 11 with Python 3.12 from python.org. | Your 26 Nov message | README |
 | A-06 | The GitHub repo `WRECKER1/Strategy-Consultant` is **public**. The midterm text, course case texts and copyrighted source documents are therefore **not committed**; real-firm source files stay local (`cases/*/sources/` is git-ignored except for SYNTHETIC packs). Consider making the repo private until grading is done. | Copyright and academic integrity | `.gitignore` |
 
-## API credit estimate (D-22)
+## Running without API credit (D-30)
 
-This is an estimate, not a measurement. The run log will record actual tokens and cost from each API response (`usage` field), so you will see real spend after the first run.
+No API credit will be bought, so every LLM step runs in claude.ai through paste mode, and the API estimate made earlier no longer applies. Rough workload per case (an estimate: the real numbers are printed in each run's `prefilter_report.json` and `PASTE_PLAN.md`):
 
-Prices used (Claude API list prices, per million tokens): Opus 5.5 $4 input / $20 output; Sonnet 5.5 $2 / $10. Batch API is 50% cheaper. Cached system-prompt reads are about $0.20 per million.
+| Case | Source text after pre-filter | Extraction prompts | Classification | Recommendation + report | Total prompts |
+|---|---|---|---|---|---|
+| Real firm (2 annual reports, 4 calls, deck, 30 postings, news, reviews) | about 150–200k words | about 13–17 | 1–2 | 2 | **about 16–21** |
+| Course case | about 15–25k words | 2 | 1 | 2 | about 5 |
+| Synthetic pack T1–T5 | about 1–3k words | 1 | 1 | 2 | about 4 |
 
-| Run | Token assumption | Opus 5.5 cost |
-|---|---|---|
-| One real firm, full pipeline | About 350k tokens of source text (2 annual reports' relevant sections, 4 calls, deck, 30 postings, news, review aggregate), read in about 45 chunks; about 90k output tokens for extraction incl. thinking; classification, recommendation and report about 110k in and 40k out | about $4–5 |
-| Course case | about 20–30k tokens | about $0.50 |
-| One synthetic pack (T1–T5) | about 5–10k tokens | about $0.20–0.30 |
+Split across 7 members, that is about 3 prompts each per real firm. Claude Pro usage limits are per account, so spreading the work also spreads the limits.
 
-| Budget line | Runs | Estimate |
-|---|---|---|
-| Real firms (2 firms × about 4 runs: development, prompt fixes, final, AI-vs-manual) | 8 | $40 |
-| Course case | 4 | $2 |
-| T1–T5 regression runs | about 30 | $9 |
-| Prompt development on small samples | — | $10 |
-| Rehearsals and live stress demo (one short extraction each) | about 10 | $3 |
-| **Total** | | **about $65** |
-
-**Recommendation:** buy **$50** of API credit now and set a spend limit in the Anthropic Console. Top up $25 only if the run-log meter shows you need it. To halve the cost, either:
-- switch extraction to Sonnet 5.5 (one line in `config/runtime.yaml`), or
-- run the final extraction passes through the Batch API.
-
-If you buy no credit at all, the tool still runs completely in **paste-in mode**: you run each agent prompt in Claude Pro and upload the returned JSON.
+**Demo implication:** replay mode reruns any case from saved replies without the internet. The live "inject a contradictory source" step needs one paste round in claude.ai, with a saved reply as backup.
 
 ## Defects found and fixed during the build
 | Date | Defect | Found by | Fix |
@@ -84,4 +74,5 @@ If you buy no credit at all, the tool still runs completely in **paste-in mode**
 
 ## Change history
 - 2026-11-26: D-01 to D-22 and A-01 to A-06 recorded. Phase 1 config v1.0.0.
+- 2026-11-26: No API credit. D-28 to D-30 added; paste mode made the default; `config/prefilter.yaml` added (new fingerprint).
 - 2026-11-26: Phase 2. D-23 to D-27 added, three defects fixed, `config/runtime.yaml` added (outside the fingerprint).

@@ -59,12 +59,14 @@ docs/          spec digest, decision log, later the demo script and AI Use Log
 
 To run a case from the command line, see `agents/README.md`. The Streamlit app (`streamlit run app/app.py`) arrives in Phase 3.
 
-### API key (for api mode)
-Create a key in the Anthropic Console and set a spend limit there. Then, in PowerShell:
+### AI steps: paste mode (default)
+The tool needs no API key. It writes prompts that you run in claude.ai with your Pro accounts; see `agents/README.md`.
+
+API mode exists but has not been tested against the live API. If you ever get a key, set it in PowerShell:
 ```powershell
 setx ANTHROPIC_API_KEY "paste-key-here"
 ```
-Close PowerShell and open it again. Never commit the key. Without a key, use `--mode paste`.
+Close PowerShell and open it again, then use `--mode api`. Never commit the key.
 
 ## Ethics
 

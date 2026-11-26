@@ -1,0 +1,7 @@
+source_id,title,publisher,date,url_or_database,access_type,source_type,default_class,date_collected,collector,file,units
+S01,Annual Report 2025-26 (SYNTHETIC),Kestrel Home Products Ltd,2026-06-30,synthetic,public,annual_report,F,2026-11-15,M7,S01_annual_report.txt,1
+S02,"Kestrel's digital push runs into its own hierarchy (SYNTHETIC)",The Business Ledger (fictional),2026-08-12,synthetic,public,news_article,T,2026-11-15,M7,S02_news_ledger.txt,1
+S03,"Inside Kestrel's technology council (SYNTHETIC)",Industry Weekly (fictional),2026-09-30,synthetic,public,news_article,T,2026-11-15,M7,S03_news_weekly.txt,1
+S04,Digital and technology job postings sample (SYNTHETIC),Kestrel Home Products Ltd careers page,2026-11-01,synthetic,public,job_postings,F,2026-11-15,M7,S04_job_postings.txt,16
+S05,Employee review theme aggregate (SYNTHETIC),ReviewTally (fictional aggregator),2026-10-31,synthetic,public,employee_review_aggregate,E,2026-11-15,M7,S05_reviews.txt,1
+S06,Q1 FY27 earnings call transcript (SYNTHETIC),Kestrel Home Products Ltd,2026-08-05,synthetic,public,earnings_call_transcript,C,2026-11-15,M7,S06_call_q1.txt,1

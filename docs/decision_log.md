@@ -31,6 +31,12 @@ All design decisions made since the midterm. You asked me to "go with your intui
 | D-21 | Build option C (hybrid): a Python deterministic engine with YAML config; a Streamlit UI with checkpoints CP1–CP3; agents run in API mode or paste-in mode; replay mode for the demo; an Excel scorecard mirror with live formulas. | MT §4.3 | whole repo |
 | D-22 | Model: the agents use Claude Opus 5.5 (`claude-opus-5-5`) by default. This is set in `config/runtime.yaml`, which is **not** part of the core fingerprint, so changing the model does not break the generalisability test. | n/a | `config/runtime.yaml` (Phase 2) |
 
+| D-23 | Pipeline order: extraction → quote verification → classification (verified rows only, to save cost) → full verification → CP1 → CP2 → scoring. CP2 comes **before** scoring, because its answers (modifiers, contradiction resolution, DI1 tie, ownership) are scoring inputs. | MT §4.3, Table 11 | `engine/orchestrator.py` |
+| D-24 | The intake agent and the verifier are rule-based code, not LLM agents. Both are checks with right answers, so code is more reliable and fully auditable. | MT §4.3 steps 1, 3 | `engine/intake.py`, `engine/verify.py` |
+| D-25 | Only flagged rows are excluded from bulk acceptance at CP1. The bulk action is logged with the analyst's name, so the demo can show both the quick path and individual review. | MT Table 11 row 1 | `engine/checkpoints.py` |
+| D-26 | A source passage that looks like an instruction to the tool is flagged by a code pattern check **and** by the extraction agent's own report. Every row from that chunk carries `embedded_instruction` and needs individual review. | MT §5.3 | `engine/verify.py`, `agents/prompts/extraction.md` |
+| D-27 | Agent responses are cached by a hash of (model, prompt, input, schema). Reruns with unchanged inputs are free and identical. Replay mode is the demo fallback. | demo reliability | `agents/llm.py` |
+
 ## Assumptions
 
 | ID | Assumption | Why | How to change |
@@ -69,5 +75,13 @@ Prices used (Claude API list prices, per million tokens): Opus 5.5 $4 input / $2
 
 If you buy no credit at all, the tool still runs completely in **paste-in mode**: you run each agent prompt in Claude Pro and upload the returned JSON.
 
+## Defects found and fixed during the build
+| Date | Defect | Found by | Fix |
+|---|---|---|---|
+| 2026-11-26 | YAML 1.1 read the unquoted EC1 values `yes` / `no` as true / false, so every EC1 row failed schema validation. | Phase 2 pipeline test | Values quoted in `codebook.yaml`. The core fingerprint changed (pre-release). |
+| 2026-11-26 | A word hyphenated across a line break in the source (`sign-\noff`) did not match the excerpt `sign-off`. | Verifier unit test | Hyphens are ignored when matching. |
+| 2026-11-26 | Identical boilerplate in different job postings was flagged as duplicate SO3 evidence. | Pipeline test | For SO3, the duplicate key includes the posting label. |
+
 ## Change history
 - 2026-11-26: D-01 to D-22 and A-01 to A-06 recorded. Phase 1 config v1.0.0.
+- 2026-11-26: Phase 2. D-23 to D-27 added, three defects fixed, `config/runtime.yaml` added (outside the fingerprint).

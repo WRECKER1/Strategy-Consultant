@@ -1,0 +1,20 @@
+# SYNTHETIC TEST PACK T1 — "Coherent misfit" (MT §7.1, Table 9)
+# Hypothetical firm with constructed evidence. It does not describe any real company.
+# Expected behaviour (MT Table 9): M1 and M2 fire, confidence High.
+case_id: T1_coherent_misfit
+display_name: "Kestrel Home Products Ltd (SYNTHETIC)"
+synthetic: true
+as_of_date: 2026-11-15
+expected:                       # used by the Phase 4 test harness
+  fired: [M1, M2]
+  not_fired: [M3, M4, M5]
+  confidence_at_least: {M1: High, M2: High}
+context:
+  industry: "Consumer durables manufacturing"
+  employees: 14200
+  ownership: listed_private
+  regulatory_intensity: low
+  environmental_uncertainty: low_moderate
+  life_cycle_stage: elaboration
+  geography: "India"
+  transformation_announcement_date: 2024-05-20

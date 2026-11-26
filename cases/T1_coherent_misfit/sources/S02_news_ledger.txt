@@ -1,0 +1,6 @@
+SYNTHETIC DOCUMENT — constructed for stress test T1. Not a real company.
+The Business Ledger, 12 August 2026
+Kestrel's digital push runs into its own hierarchy
+Kestrel Home Products has promised an ambitious digital platform, but former and current managers describe a company where every pilot still climbs the same ladder. According to three people familiar with the process, even small experiments need sign-off from the Technology Council, which meets once a month.
+The platform work itself is organised along functional lines. Plant IT, distribution IT and finance systems teams each deliver their own piece and hand it over through formal change requests; there are no cross-functional product teams, the people said.
+Analysts at Meridian Research said the company's shared data platform is "still a plan": each business unit continues to run its own ERP instance.

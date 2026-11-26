@@ -257,8 +257,8 @@ indicators:
     scoring_method: structured
     size_sensitive: true                   # MT Table 5 Size row
     fields:                                # D-08
-      unit_exists: [yes, announced, no, unknown]
-      integration_link: [yes, partial, no, unknown]
+      unit_exists: ["yes", "announced", "no", "unknown"]
+      integration_link: ["yes", "partial", "no", "unknown"]
     mapping:                               # evaluated top to bottom; first match wins
       - {when: "unit_exists == 'no'",                                        score: 1, anchor: "No exploratory unit evident (evidence of absence exists)"}
       - {when: "unit_exists == 'announced'",                                 score: 2, anchor: "Unit announced but not yet operating", added: true}

@@ -1,0 +1,66 @@
+SYNTHETIC DOCUMENT — constructed for stress test T1. Not a real company.
+Kestrel careers page: digital and technology roles open on 1 November 2026
+
+=== Posting 1 ===
+Role: Digital Engineer 1
+Responsibilities: Follow the approved change-request process and secure departmental approvals at each stage.
+
+=== Posting 2 ===
+Role: Digital Manager 2
+Responsibilities: Maintain compliance documentation and route all deviations to the reporting manager for approval.
+
+=== Posting 3 ===
+Role: Digital Specialist 3
+Responsibilities: Ensure strict adherence to documented SOPs and obtain sign-off from the Technology Council before any change.
+
+=== Posting 4 ===
+Role: Digital Analyst 4
+Responsibilities: Follow the approved change-request process and secure departmental approvals at each stage.
+
+=== Posting 5 ===
+Role: Digital Engineer 5
+Responsibilities: Maintain compliance documentation and route all deviations to the reporting manager for approval.
+
+=== Posting 6 ===
+Role: Digital Manager 6
+Responsibilities: Ensure strict adherence to documented SOPs and obtain sign-off from the Technology Council before any change.
+
+=== Posting 7 ===
+Role: Digital Specialist 7
+Responsibilities: Follow the approved change-request process and secure departmental approvals at each stage.
+
+=== Posting 8 ===
+Role: Digital Analyst 8
+Responsibilities: Maintain compliance documentation and route all deviations to the reporting manager for approval.
+
+=== Posting 9 ===
+Role: Digital Engineer 9
+Responsibilities: Ensure strict adherence to documented SOPs and obtain sign-off from the Technology Council before any change.
+
+=== Posting 10 ===
+Role: Digital Manager 10
+Responsibilities: Follow the approved change-request process and secure departmental approvals at each stage.
+
+=== Posting 11 ===
+Role: Digital Specialist 11
+Responsibilities: Maintain compliance documentation and route all deviations to the reporting manager for approval.
+
+=== Posting 12 ===
+Role: Digital Analyst 12
+Responsibilities: Work within established procedures while suggesting improvements to the digital roadmap.
+
+=== Posting 13 ===
+Role: Digital Engineer 13
+Responsibilities: Work within established procedures while suggesting improvements to the digital roadmap.
+
+=== Posting 14 ===
+Role: Digital Manager 14
+Responsibilities: Work within established procedures while suggesting improvements to the digital roadmap.
+
+=== Posting 15 ===
+Role: Digital Specialist 15
+Responsibilities: Own the product backlog end to end and run experiments with customers.
+
+=== Posting 16 ===
+Role: Digital Analyst 16
+Responsibilities: Own the product backlog end to end and run experiments with customers.

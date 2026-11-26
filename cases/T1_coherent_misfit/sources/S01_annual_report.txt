@@ -1,0 +1,16 @@
+SYNTHETIC DOCUMENT — constructed for stress test T1. Not a real company.
+[[PAGE 4]]
+Letter from the Managing Director
+This year we made digital the organising theme of our strategy. Under the Kestrel Connect programme we will invest Rs 1,850 crore over FY26 to FY29 in a single customer and operations platform. Our targets are specific: 40% of sales through direct digital channels by March 2029, a 25% reduction in order-to-delivery time by March 2028, and predictive maintenance on all 9 plants by December 2027.
+Kestrel Connect is not an IT project. It links product design, plant operations, distribution, after-sales service and finance on one shared data platform, so each of these teams will depend on the others' data every day.
+[[PAGE 5]]
+We value reliability, frugality and respect for process. Innovation is one of our six values.
+[[PAGE 37]]
+Corporate governance: management structure
+The Chief Digital Officer reports to the Chief Information Officer, who reports to the Chief Operating Officer. The Chief Operating Officer reports to the Managing Director.
+All technology and digital expenditure above Rs 50 lakh, including pilots, is approved by the Technology Council chaired by the Managing Director. No business unit holds delegated approval authority for digital spending.
+[[PAGE 41]]
+Innovation and learning
+Kestrel Labs, our product innovation centre in Pune, develops new connected-appliance concepts. Each Labs project has a named business-unit sponsor and a quarterly transfer review at which concepts move into the plant engineering roadmap; 7 concepts were transferred in FY26.
+Of the FY26 technology budget of Rs 410 crore, 46% was spent on new capabilities and 54% on running existing systems.
+The Kestrel Learning Academy delivered digital skills courses to 3,900 employees across manufacturing and sales in FY26, about 27% of the workforce.
